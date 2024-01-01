@@ -1,5 +1,4 @@
-﻿using ApiMicrosservicesProduct.Models;
-using System.ComponentModel;
+﻿using System.ComponentModel;
 
 namespace ApiMicrosservicesProduct.DTOs;
 public record CategoryDto
@@ -11,5 +10,4 @@ public record CategoryDto
 
     [DisplayName("Image")]
     public string Image { get; set; } = string.Empty;
-    public ICollection<Product> Products { get; } = [];
 }

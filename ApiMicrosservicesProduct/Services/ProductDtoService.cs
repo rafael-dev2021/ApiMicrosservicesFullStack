@@ -67,12 +67,6 @@ public class ProductDtoService(IMapper mapper, IProductRepository productReposit
         }
     }
 
-    /// <summary>
-    /// Endpoint para deletar um produto pelo ID.
-    /// </summary>
-    /// <param name="service">Serviço de operações de produto.</param>
-    /// <param name="id">ID do produto a ser deletado.</param>
-    /// <returns>Um resultado HTTP indicando o status da operação.</returns>
     public async Task DeleteAsync(int? id)
     {
         if (id == null)

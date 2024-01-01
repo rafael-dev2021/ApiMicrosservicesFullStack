@@ -19,7 +19,7 @@ public class ProductRepository(AppDbContext appDbContext) : IProductRepository
     {
         return await _appDbContext.Products
             .Include(x => x.Category)
-            .FirstOrDefaultAsync(x => x.Id == id);
+            .SingleOrDefaultAsync(x => x.Id == id);
     }
     public async Task<Product> CreateAsync(Product entity)
     {
@@ -43,13 +43,11 @@ public class ProductRepository(AppDbContext appDbContext) : IProductRepository
 
     public async Task<IEnumerable<Product>> GetSearchProductAsync(string keyword)
     {
-        // Buscar os produtos do banco sem aplicar o filtro
         var products = await _appDbContext.Products
             .AsNoTracking()
             .Include(x => x.Category)
             .ToListAsync();
 
-        // Filtrar os produtos no lado do cliente usando LINQ
         var filteredProducts = products
             .Where(x =>
                 x.Name.ToLower().Contains(keyword.ToLower()) ||

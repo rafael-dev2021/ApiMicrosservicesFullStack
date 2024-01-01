@@ -20,7 +20,7 @@ namespace ApiMicrosservicesProduct.Context.Repositories
         {
             return await _appDbContext.Categories
                 .Include(x => x.Products)
-                .FirstOrDefaultAsync(x => x.Id == id);
+                .SingleOrDefaultAsync(x => x.Id == id);
         }
         public async Task<Category> CreateAsync(Category entity)
         {

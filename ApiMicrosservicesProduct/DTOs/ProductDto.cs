@@ -1,8 +1,6 @@
-﻿using ApiMicrosservicesProduct.Models;
-using System.ComponentModel;
+﻿using System.ComponentModel;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
-using System.Text.Json.Serialization;
 
 namespace ApiMicrosservicesProduct.DTOs;
 public record ProductDto
@@ -27,9 +25,6 @@ public record ProductDto
     [DisplayName("Stock")]
     public int Stock { get; set; }
     public string CategoryName { get; set; }
-
-    [JsonIgnore]
-    public Category Category { get; set; }
 
     [DisplayName("Categories")]
     public int CategoryId { get; set; }

@@ -2,48 +2,76 @@
 using ApiMicrosservicesProduct.Services.Interfaces;
 using FluentValidation;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Caching.Distributed;
+using Newtonsoft.Json;
 
 namespace ApiMicrosservicesProduct.EndPoints;
 public static class CategoryServiceEndPoint
 {
     public static void MapCategoryServiceEndpoints(this WebApplication app)
     {
-        /// <summary>
-        /// Obtém todas as categorias.
-        /// </summary>
-        /// <param name="service">Serviço de operações de categoria.</param>
-        /// <returns>Um resultado HTTP com as categorias encontradas ou uma mensagem indicando que nenhuma categoria foi encontrada.</returns>
-        app.MapGet("/api/v1/getcategories", async ([FromServices] ICategoryDtoService service) =>
+        app.MapGet("/api/v1/getcategories", async ([FromServices] ICategoryDtoService service, IDistributedCache cache) =>
         {
-            var categories = await service.GetItemsDtoAsync();
+            var cachedCategories = await cache.GetStringAsync("cached_categories");
 
-            if (categories == null || !categories.Any()) return Results.NotFound("No categories found");
+            if (!string.IsNullOrEmpty(cachedCategories))
+            {
+                var categories = JsonConvert.DeserializeObject<List<CategoryDto>>(cachedCategories);
+                return Results.Ok(categories);
+            }
+            else
+            {
+                var categories = await service.GetItemsDtoAsync();
 
-            return Results.Ok(categories);
+                if (categories == null || !categories.Any())
+                {
+                    return Results.NotFound("No categories found");
+                }
+                else
+                {
+                    var serializedCategories = JsonConvert.SerializeObject(categories);
+                    await cache.SetStringAsync("cached_categories", serializedCategories, new DistributedCacheEntryOptions
+                    {
+                        AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(10) 
+                    });
+
+                    return Results.Ok(categories);
+                }
+            }
         });
 
-        /// <summary>
-        /// Obtém uma categoria pelo ID.
-        /// </summary>
-        /// <param name="id">ID da categoria a ser obtida.</param>
-        /// <param name="service">Serviço de operações de categoria.</param>
-        /// <returns>Um resultado HTTP com a categoria encontrada ou uma mensagem indicando que a categoria não foi encontrada.</returns>
-        app.MapGet("/api/v1/getcategorybyid/{id}", async ([FromServices] ICategoryDtoService service, int? id) =>
+        
+        app.MapGet("/api/v1/getcategorybyid/{id}", async ([FromServices] ICategoryDtoService service, IDistributedCache cache, int? id) =>
         {
-            var category = await service.GetByIdAsync(id);
+            var cachedCategory = await cache.GetStringAsync($"cached_category_{id}");
 
-            return category == null
-                ? Results.NotFound("Category not found")
-                : Results.Ok(category);
+            if (!string.IsNullOrEmpty(cachedCategory))
+            {
+                var category = JsonConvert.DeserializeObject<CategoryDto>(cachedCategory);
+                return Results.Ok(category);
+            }
+            else
+            {
+                var category = await service.GetByIdAsync(id);
+
+                if (category == null)
+                {
+                    return Results.NotFound("Category not found");
+                }
+                else
+                {
+                    var serializedCategory = JsonConvert.SerializeObject(category);
+                    await cache.SetStringAsync($"cached_category_{id}", serializedCategory, new DistributedCacheEntryOptions
+                    {
+                        AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(10) 
+                    });
+
+                    return Results.Ok(category);
+                }
+            }
         });
 
-        /// <summary>
-        /// Adiciona uma nova categoria.
-        /// </summary>
-        /// <param name="service">Serviço de operações de categoria.</param>
-        /// <param name="categoryDto">Dados da categoria a serem adicionados.</param>
-        /// <param name="validator">Validador para validar a categoria.</param>
-        /// <returns>Um resultado HTTP indicando o status da operação.</returns>
+        
         app.MapPost("/api/v1/addcategory", async ([FromServices] ICategoryDtoService service, [FromBody] CategoryDto categoryDto, [FromServices] IValidator<CategoryDto> validator) =>
         {
             if (categoryDto == null) return Results.BadRequest("Invalid category data.");
@@ -64,14 +92,7 @@ public static class CategoryServiceEndPoint
             }
         });
 
-        /// <summary>
-        /// Atualiza uma categoria específica pelo ID.
-        /// </summary>
-        /// <param name="service">Serviço de operações de categoria.</param>
-        /// <param name="id">ID da categoria a ser atualizada.</param>
-        /// <param name="updateCategoryDto">Dados da categoria a serem atualizados.</param>
-        /// <param name="validator">Validador para validar a categoria.</param>
-        /// <returns>Um resultado HTTP indicando o status da operação.</returns>
+        
         app.MapPut("/api/v1/updatecategory/{id}", async ([FromServices] ICategoryDtoService service, int? id, [FromBody] CategoryDto updateCategoryDto, [FromServices] IValidator<CategoryDto> validator) =>
         {
             if (id != updateCategoryDto?.Id) return Results.BadRequest("ID mismatch between URL and category data.");
@@ -94,12 +115,7 @@ public static class CategoryServiceEndPoint
             }
         });
 
-        /// <summary>
-        /// Deleta uma categoria pelo ID.
-        /// </summary>
-        /// <param name="id">ID da categoria a ser deletada.</param>
-        /// <param name="service">Serviço de operações de categoria.</param>
-        /// <returns>Um resultado HTTP indicando o status da operação.</returns>
+        
         app.MapDelete("/api/v1/deletecategory/{id}", async (int? id, [FromServices] ICategoryDtoService service) =>
         {
             if (id == null) return Results.NotFound("Category ID is missing.");
