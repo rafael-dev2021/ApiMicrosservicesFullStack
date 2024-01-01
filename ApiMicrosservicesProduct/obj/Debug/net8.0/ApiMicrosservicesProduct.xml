@@ -1,0 +1,20 @@
+<?xml version="1.0"?>
+<doc>
+    <assembly>
+        <name>ApiMicrosservicesProduct</name>
+    </assembly>
+    <members>
+        <member name="T:ApiMicrosservicesProduct.Migrations.ApiMicrosservicesProducts">
+            <inheritdoc />
+        </member>
+        <member name="M:ApiMicrosservicesProduct.Migrations.ApiMicrosservicesProducts.Up(Microsoft.EntityFrameworkCore.Migrations.MigrationBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="M:ApiMicrosservicesProduct.Migrations.ApiMicrosservicesProducts.Down(Microsoft.EntityFrameworkCore.Migrations.MigrationBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="M:ApiMicrosservicesProduct.Migrations.ApiMicrosservicesProducts.BuildTargetModel(Microsoft.EntityFrameworkCore.ModelBuilder)">
+            <inheritdoc />
+        </member>
+    </members>
+</doc>
