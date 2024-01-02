@@ -1,6 +1,7 @@
 ﻿using ApiMicrosservicesProduct.DTOs;
 using ApiMicrosservicesProduct.Services.Interfaces;
 using FluentValidation;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Caching.Distributed;
 using Newtonsoft.Json;
@@ -10,7 +11,7 @@ public static class CategoryServiceEndPoint
 {
     public static void MapCategoryServiceEndpoints(this WebApplication app)
     {
-        app.MapGet("/api/v1/getcategories", async ([FromServices] ICategoryDtoService service, IDistributedCache cache) =>
+        app.MapGet("/api/v1/categories", async ([FromServices] ICategoryDtoService service, IDistributedCache cache) =>
         {
             var cachedCategories = await cache.GetStringAsync("cached_categories");
 
@@ -32,7 +33,7 @@ public static class CategoryServiceEndPoint
                     var serializedCategories = JsonConvert.SerializeObject(categories);
                     await cache.SetStringAsync("cached_categories", serializedCategories, new DistributedCacheEntryOptions
                     {
-                        AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(10) 
+                        AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(10)
                     });
 
                     return Results.Ok(categories);
@@ -40,8 +41,8 @@ public static class CategoryServiceEndPoint
             }
         });
 
-        
-        app.MapGet("/api/v1/getcategorybyid/{id}", async ([FromServices] ICategoryDtoService service, IDistributedCache cache, int? id) =>
+
+        app.MapGet("/api/v1/categories/{id}", async ([FromServices] ICategoryDtoService service, IDistributedCache cache, int? id) =>
         {
             var cachedCategory = await cache.GetStringAsync($"cached_category_{id}");
 
@@ -63,7 +64,7 @@ public static class CategoryServiceEndPoint
                     var serializedCategory = JsonConvert.SerializeObject(category);
                     await cache.SetStringAsync($"cached_category_{id}", serializedCategory, new DistributedCacheEntryOptions
                     {
-                        AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(10) 
+                        AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(10)
                     });
 
                     return Results.Ok(category);
@@ -71,8 +72,8 @@ public static class CategoryServiceEndPoint
             }
         });
 
-        
-        app.MapPost("/api/v1/addcategory", async ([FromServices] ICategoryDtoService service, [FromBody] CategoryDto categoryDto, [FromServices] IValidator<CategoryDto> validator) =>
+
+        app.MapPost("/api/v1/categories", [Authorize(Roles = "Admin")] async ([FromServices] ICategoryDtoService service, [FromBody] CategoryDto categoryDto, [FromServices] IValidator<CategoryDto> validator, IDistributedCache cache) =>
         {
             if (categoryDto == null) return Results.BadRequest("Invalid category data.");
 
@@ -84,6 +85,9 @@ public static class CategoryServiceEndPoint
             try
             {
                 await service.AddAsync(categoryDto);
+
+                await cache.RemoveAsync("cached_categories");
+
                 return Results.Created($"/api/v1/addcategory/{categoryDto.Id}", categoryDto);
             }
             catch (Exception ex)
@@ -92,8 +96,8 @@ public static class CategoryServiceEndPoint
             }
         });
 
-        
-        app.MapPut("/api/v1/updatecategory/{id}", async ([FromServices] ICategoryDtoService service, int? id, [FromBody] CategoryDto updateCategoryDto, [FromServices] IValidator<CategoryDto> validator) =>
+
+        app.MapPut("/api/v1/categories/{id}", [Authorize(Roles = "Admin")] async ([FromServices] ICategoryDtoService service, int? id, [FromBody] CategoryDto updateCategoryDto, [FromServices] IValidator<CategoryDto> validator, IDistributedCache cache) =>
         {
             if (id != updateCategoryDto?.Id) return Results.BadRequest("ID mismatch between URL and category data.");
 
@@ -107,6 +111,11 @@ public static class CategoryServiceEndPoint
             try
             {
                 await service.UpdateAsync(updateCategoryDto);
+
+                await cache.RemoveAsync($"cached_category_{id}");
+
+                await cache.RemoveAsync("cached_categories");
+
                 return Results.Ok();
             }
             catch (Exception ex)
@@ -115,8 +124,8 @@ public static class CategoryServiceEndPoint
             }
         });
 
-        
-        app.MapDelete("/api/v1/deletecategory/{id}", async (int? id, [FromServices] ICategoryDtoService service) =>
+
+        app.MapDelete("/api/v1/categories/{id}", [Authorize(Roles = "Admin")] async (int? id, [FromServices] ICategoryDtoService service, IDistributedCache cache) =>
         {
             if (id == null) return Results.NotFound("Category ID is missing.");
 
@@ -124,6 +133,11 @@ public static class CategoryServiceEndPoint
             if (category == null) return Results.NotFound($"Category with ID {id} not found.");
 
             await service.DeleteAsync(id.Value);
+
+            await cache.RemoveAsync($"cached_category_{id}");
+
+            await cache.RemoveAsync("cached_categories");
+
             return Results.NoContent();
         });
 

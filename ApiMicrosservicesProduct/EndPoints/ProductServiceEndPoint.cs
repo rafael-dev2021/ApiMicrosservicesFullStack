@@ -1,6 +1,7 @@
 ﻿using ApiMicrosservicesProduct.DTOs;
 using ApiMicrosservicesProduct.Services.Interfaces;
 using FluentValidation;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Caching.Distributed;
 using Newtonsoft.Json;
@@ -11,7 +12,7 @@ public static class ProductServiceEndPoint
 {
     public static void MapProductServiceEndpoints(this WebApplication app)
     {
-        app.MapGet("/api/v1/getproducts", async ([FromServices] IProductDtoService service, IDistributedCache cache) =>
+        app.MapGet("/api/v1/products", async ([FromServices] IProductDtoService service, IDistributedCache cache) =>
         {
             var cachedProducts = await cache.GetStringAsync("cached_products");
 
@@ -33,7 +34,7 @@ public static class ProductServiceEndPoint
                     var serializedProducts = JsonConvert.SerializeObject(products);
                     await cache.SetStringAsync("cached_products", serializedProducts, new DistributedCacheEntryOptions
                     {
-                        AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(10) 
+                        AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(10)
                     });
 
                     return Results.Ok(products);
@@ -42,7 +43,7 @@ public static class ProductServiceEndPoint
         });
 
 
-        app.MapGet("/api/v1/productbyid/{id}", async ([FromServices] IProductDtoService service, IDistributedCache cache, int? id) =>
+        app.MapGet("/api/v1/products/{id}", async ([FromServices] IProductDtoService service, IDistributedCache cache, int? id) =>
         {
             var cachedProduct = await cache.GetStringAsync($"product_{id}");
 
@@ -64,7 +65,7 @@ public static class ProductServiceEndPoint
                     var serializedProduct = JsonConvert.SerializeObject(product);
                     await cache.SetStringAsync($"product_{id}", serializedProduct, new DistributedCacheEntryOptions
                     {
-                        AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(10) 
+                        AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(10)
                     });
 
                     return Results.Ok(product);
@@ -72,7 +73,8 @@ public static class ProductServiceEndPoint
             }
         });
 
-       
+
+
         app.MapGet("/api/v1/products/search/{keyword}", async ([FromServices] IProductDtoService service, IDistributedCache cache, string keyword) =>
         {
             IEnumerable<ProductDto> products;
@@ -107,7 +109,7 @@ public static class ProductServiceEndPoint
         });
 
 
-        app.MapPost("/api/v1/addproduct", async ([FromServices] IProductDtoService service, [FromBody] ProductDto productDto, [FromServices] IValidator<ProductDto> validator) =>
+        app.MapPost("/api/v1/products", [Authorize(Roles = "Admin")] async ([FromServices] IProductDtoService service, [FromBody] ProductDto productDto, [FromServices] IValidator<ProductDto> validator, IDistributedCache cache) =>
         {
             if (productDto == null) return Results.BadRequest("Invalid product data.");
 
@@ -119,7 +121,10 @@ public static class ProductServiceEndPoint
             try
             {
                 await service.AddAsync(productDto);
-                return Results.Created($"/api/v1/addproduct/{productDto.Id}", productDto);
+
+                await cache.RemoveAsync("cached_products");
+
+                return Results.Created($"/api/products/{productDto.Id}", productDto);
             }
             catch (Exception ex)
             {
@@ -128,7 +133,8 @@ public static class ProductServiceEndPoint
         });
 
 
-        app.MapPut("/api/v1/updateproduct/{id}", async ([FromServices] IProductDtoService service, int? id, [FromBody] ProductDto updateProductDto, [FromServices] IValidator<ProductDto> validator) =>
+
+        app.MapPut("/api/v1/products/{id}", [Authorize(Roles = "Admin")] async ([FromServices] IProductDtoService service, int? id, [FromBody] ProductDto updateProductDto, [FromServices] IValidator<ProductDto> validator, IDistributedCache cache) =>
         {
             if (id != updateProductDto?.Id) return Results.BadRequest("ID mismatch between URL and product data.");
 
@@ -142,6 +148,11 @@ public static class ProductServiceEndPoint
             try
             {
                 await service.UpdateAsync(updateProductDto);
+
+                await cache.RemoveAsync($"product_{id}");
+
+                await cache.RemoveAsync("cached_products");
+
                 return Results.Ok();
             }
             catch (Exception ex)
@@ -151,7 +162,8 @@ public static class ProductServiceEndPoint
         });
 
 
-        app.MapDelete("/api/v1/deleteproduct/{id}", async ([FromServices] IProductDtoService service, int? id) =>
+
+        app.MapDelete("/api/v1/products/{id}", [Authorize(Roles = "Admin")] async ([FromServices] IProductDtoService service, int? id, IDistributedCache cache) =>
         {
             if (id == null) return Results.NotFound("Product ID is missing.");
 
@@ -159,8 +171,14 @@ public static class ProductServiceEndPoint
             if (product == null) return Results.NotFound($"Product with ID {id} not found.");
 
             await service.DeleteAsync(id.Value);
+
+            await cache.RemoveAsync($"product_{id}");
+
+            await cache.RemoveAsync("cached_products");
+
             return Results.NoContent();
         });
+
 
     }
 }

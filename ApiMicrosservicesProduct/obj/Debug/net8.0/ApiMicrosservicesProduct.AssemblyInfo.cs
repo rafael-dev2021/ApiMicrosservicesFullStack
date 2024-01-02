@@ -14,7 +14,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("ApiMicrosservicesProduct")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+f92ff3fd56c6ea320e3cb26bb3b8170012acb517")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+6ac420b4215e05dab20c0377a16444d4d7a52975")]
 [assembly: System.Reflection.AssemblyProductAttribute("ApiMicrosservicesProduct")]
 [assembly: System.Reflection.AssemblyTitleAttribute("ApiMicrosservicesProduct")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

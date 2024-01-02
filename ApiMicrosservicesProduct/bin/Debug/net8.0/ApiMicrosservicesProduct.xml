@@ -16,5 +16,17 @@
         <member name="M:ApiMicrosservicesProduct.Migrations.ApiMicrosservicesProducts.BuildTargetModel(Microsoft.EntityFrameworkCore.ModelBuilder)">
             <inheritdoc />
         </member>
+        <member name="T:ApiMicrosservicesProduct.Migrations.ApiMicrosservicesProduct">
+            <inheritdoc />
+        </member>
+        <member name="M:ApiMicrosservicesProduct.Migrations.ApiMicrosservicesProduct.Up(Microsoft.EntityFrameworkCore.Migrations.MigrationBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="M:ApiMicrosservicesProduct.Migrations.ApiMicrosservicesProduct.Down(Microsoft.EntityFrameworkCore.Migrations.MigrationBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="M:ApiMicrosservicesProduct.Migrations.ApiMicrosservicesProduct.BuildTargetModel(Microsoft.EntityFrameworkCore.ModelBuilder)">
+            <inheritdoc />
+        </member>
     </members>
 </doc>
